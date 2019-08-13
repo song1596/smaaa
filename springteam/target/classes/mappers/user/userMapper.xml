@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 다른 mapper와 중복되지 않도록 네임스페이스 기재 -->
+<mapper namespace="user">
+	
+<!-- select -->
+	<!-- 회원정보 가져오기 -->
+	<select id="viewUser" resultType="UserDTO">
+		SELECT * FROM team_user  
+			WHERE userid=#{userid}
+	</select>
+	
+	<!-- 아이디 체크 -->
+	<select id="idcheck" resultType="int">
+		SELECT count(*) FROM team_user 
+			WHERE userid=#{userid}
+	</select>
+	
+	<!-- 비밀번호 체크 -->
+	<select id="pwdcheck" resultType="int">
+		SELECT count(*) FROM team_user  
+			WHERE userid=#{userid} AND pwd=PACK_ENCRYPTION_DECRYPTION.FUNC_ENCRYPT(#{pwd})
+	</select>
+	
+	<!-- 이메일 체크 -->
+	<select id="emailcheck" resultType="int">
+		SELECT count(*) FROM team_user
+			WHERE email=#{email}		
+	</select>
+	
+	<!-- 이메일, 이름으로 찾기 -->
+	<select id="finduser" resultType="UserDTO">
+		SELECT * FROM team_user
+			WHERE email=#{email} AND name=#{name}
+	</select>
+	
+	<!-- 회원 리스트 -->
+	<select id="userlist" resultType="UserDTO">
+		SELECT * FROM (
+			SELECT rownum AS rn, 
+			A.* FROM (
+				SELECT userid, name, email, tel, zipcode, address1, address2, joindate
+						, lastlogin, user_group, class_name 
+					FROM team_user 
+					<include refid="search" />
+					<include refid="align" />
+					) A
+		) WHERE rn BETWEEN #{begin} AND #{end}
+	</select>
+	
+	<!-- 회원수 -->
+	<select id="usercount" resultType="int">
+		SELECT count(*) FROM team_user 
+			<include refid="search" />
+	</select>
+<!-- /select -->
+	
+<!-- insert -->
+	<!-- 회원가입 -->
+	<insert id="insertuser">
+		INSERT INTO team_user(userid, pwd, name, email, tel, zipcode, address1, address2, user_group, class_name) 
+			VALUES(#{userid}, PACK_ENCRYPTION_DECRYPTION.FUNC_ENCRYPT(#{pwd}), #{name}, #{email}
+			, #{tel}, #{zipcode}, #{address1}, #{address2}, #{user_group}, #{class_name})
+	</insert>
+<!-- /insert -->
+	
+<!-- update -->
+	<!-- 마지막 로그인 갱신 -->
+	<update id="updatelastlogin">
+		UPDATE team_user SET lastlogin=sysdate
+			WHERE userid=#{userid}
+	</update>
+	
+	<!-- 회원정보 업데이트 -->
+	<update id="updateuser">
+		UPDATE team_user SET pwd=PACK_ENCRYPTION_DECRYPTION.FUNC_ENCRYPT(#{pwd}) 
+			, name=#{name}, email=#{email}, tel=#{tel}, zipcode=#{zipcode}
+			, address1=#{address1}, address2=#{address2}, class_name=#{class_name} 
+			WHERE userid=#{userid}
+	</update>
+	
+	<update id="classupdate">
+		UPDATE team_user 
+			SET class_name=#{class_name} 
+			WHERE userid=#{userid}
+	</update>
+	
+	
+<!-- /update -->
+	
+<!-- delete -->
+	<delete id="deleteuser">
+		DELETE FROM team_user 
+			WHERE userid=#{userid}
+	</delete>
+<!-- /delete -->
+
+<!-- sql -->
+	<!-- 게시글 키워드 검색 -->
+	<sql id="search">
+		WHERE class_name LIKE #{class_name} 
+		AND user_group LIKE #{user_group} 
+		AND (userid LIKE #{keyword} OR name LIKE #{keyword})
+	</sql>
+<!-- /sql -->
+	<sql id="align">
+    		<choose>
+			<when test="align == 'useridasc' ">
+				ORDER BY userid ASC			
+			</when>
+			<when test="align == 'useriddesc' ">
+				ORDER BY userid DESC			
+			</when>
+			<when test="align == 'nameasc' ">
+				ORDER BY name ASC			
+			</when>
+			<when test="align == 'namedesc' ">
+				ORDER BY name DESC			
+			</when>
+			<otherwise>
+				ORDER BY userid ASC			
+			</otherwise>
+		</choose>
+  </sql>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
